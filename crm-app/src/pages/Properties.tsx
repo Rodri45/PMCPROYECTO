@@ -5,13 +5,13 @@ import type { Property, MapConfig } from "../types/PropertiesMapProps";
 
 type Status = "Interesado" | "En negociación" | "Cerrado";
 
-/** ------------------ MOCK con interesados/negociación ------------------ */
 type PropertyWithCounts = Property & {
-  interested?: number;   // leads interesados
-  negotiating?: number;  // leads en negociación
+  interested?: number;
+  negotiating?: number;
 };
 
-const MOCK: Record<string, PropertyWithCounts[]> = {
+// ---------- base ----------
+const BASE: Record<string, PropertyWithCounts[]> = {
   Bogotá: [
     { id: 1,  name: "Chico Norte",    lat: 4.676, lng: -74.048, address: "Cra 15 #120",  status: "Interesado",     interested: 12, negotiating: 3 },
     { id: 2,  name: "Rosales",        lat: 4.651, lng: -74.056, address: "Cl 72 #6",     status: "En negociación", interested:  7, negotiating: 8 },
@@ -38,33 +38,70 @@ const MOCK: Record<string, PropertyWithCounts[]> = {
     { id: 609, name: "Buenos Aires",   lat: 6.246, lng: -75.555, address: "Cl 45 #21",     status: "En negociación", interested:  6, negotiating: 5 },
   ],
 };
-const CITIES = Object.keys(MOCK);
+const CITIES = Object.keys(BASE);
 
-/** ------------------ Página ------------------ */
+// --- util demo ---
+const rand = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+function demoForCity(base: PropertyWithCounts[]): PropertyWithCounts[] {
+  // clona base y agrega 2–4 extras con coords cercanas
+  const out: PropertyWithCounts[] = base.map(p => ({ ...p }));
+  const extras = rand(2, 4);
+  const names = ["Verdes Premium", "Lagos Plaza", "Lagos Norte", "Altos del Sol", "Parque Real"];
+  for (let i = 0; i < extras; i++) {
+    const name = names[i % names.length];
+    const seed = base[rand(0, base.length - 1)];
+    out.push({
+      id: Number(`${Date.now()}${i}`),
+      name,
+      lat: seed.lat + (Math.random() - 0.5) * 0.03,
+      lng: seed.lng + (Math.random() - 0.5) * 0.03,
+      address: "Dirección por confirmar",
+      status: (["Interesado","En negociación","Interesado","En negociación","Cerrado"] as Status[])[rand(0,4)],
+      interested: rand(4, 15),
+      negotiating: rand(0, 8),
+    });
+  }
+  out.forEach(p => { if (p.status === "Cerrado") p.negotiating = 0; });
+  return out;
+}
+
 const PropertiesPage: React.FC = () => {
   const [city, setCity] = useState<string>("Bogotá");
 
-  const properties = useMemo<PropertyWithCounts[]>(
-    () => (MOCK[city] ?? []) as PropertyWithCounts[],
-    [city]
+  // almacenamos datos por ciudad para que Demo regenere todo
+  const [dataByCity, setDataByCity] = useState<Record<string, PropertyWithCounts[]>>(
+    () => JSON.parse(JSON.stringify(BASE))
   );
 
-  // Centro del mapa = promedio de puntos
+  // paginación fija (sin responsive)
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
+
+  const properties = useMemo<PropertyWithCounts[]>(
+    () => dataByCity[city] ?? [],
+    [dataByCity, city]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(properties.length / PER_PAGE));
+  const pageClamped = Math.min(page, totalPages);
+  const sliceStart = (pageClamped - 1) * PER_PAGE;
+  const visible = properties.slice(sliceStart, sliceStart + PER_PAGE);
+
+  // centro mapa
   const center = useMemo(() => {
     if (!properties.length) return { latitude: 4.711, longitude: -74.0721 };
     const sum = properties.reduce(
       (acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }),
       { lat: 0, lng: 0 }
     );
-    return {
-      latitude: sum.lat / properties.length,
-      longitude: sum.lng / properties.length,
-    };
+    return { latitude: sum.lat / properties.length, longitude: sum.lng / properties.length };
   }, [properties]);
 
   const mapConfig: MapConfig = { zoom: 12, center };
 
-  // Conteos para el donut
+  // conteos donut
   const counts = useMemo(() => {
     const c = { Interesado: 0, "En negociación": 0, Cerrado: 0 } as Record<Status, number>;
     properties.forEach((p) => c[p.status as Status]++);
@@ -78,7 +115,7 @@ const PropertiesPage: React.FC = () => {
     cerrado: Math.round((counts["Cerrado"] / totalProps) * 100),
   };
 
-  // Datos para la gráfica de “Interesados por propiedad”
+  // barras interesados
   const interestedBars = useMemo(() => {
     return properties.map((p) => ({
       name: p.name,
@@ -91,8 +128,13 @@ const PropertiesPage: React.FC = () => {
       negotiating: typeof p.negotiating === "number" ? p.negotiating : 0,
     }));
   }, [properties]);
-
   const maxInterested = Math.max(1, ...interestedBars.map((d) => d.interested));
+
+  // demo
+  const runDemo = () => {
+    setDataByCity((prev) => ({ ...prev, [city]: demoForCity(BASE[city]) }));
+    setPage(1);
+  };
 
   return (
     <div className="page">
@@ -106,17 +148,14 @@ const PropertiesPage: React.FC = () => {
               <div className="card-desc">Mapa, estado y desempeño</div>
             </div>
           </div>
-          <div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn-ghost" onClick={runDemo}>Demo</button>
             <select
               className="city-select"
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={(e) => { setCity(e.target.value); setPage(1); }}
             >
-              {CITIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         </div>
@@ -130,87 +169,36 @@ const PropertiesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Contenido en dos columnas: KPIs a la izquierda (stack), lista a la derecha */}
+      {/* KPIs + Lista */}
       <div className="props-two-col">
-        {/* Interesados (barras por propiedad) */}
+        {/* Interesados (barras) */}
         <div className="kpi-card">
           <div className="kpi-title">Interesados</div>
           <div className="bar-chart">
             {(() => {
-              // ancho/alto y spacing
-              const H = 140;
-              const top = 8;
-              const base = 110; // línea base donde apoyan las barras
-              const w = 20;     // ancho de barra
-              const gap = 12;
-              const left = 10;
+              const H = 140, top = 8, base = 110, w = 20, gap = 12, left = 10;
               const chartWidth = left + interestedBars.length * (w + gap);
-
               return (
-                <svg
-                  width="100%"
-                  height={H}
-                  viewBox={`0 0 ${chartWidth} ${H}`}
-                  preserveAspectRatio="xMinYMid meet"
-                >
-                  {/* Base line & grid */}
+                <svg width="100%" height={H} viewBox={`0 0 ${chartWidth} ${H}`} preserveAspectRatio="xMinYMid meet">
                   <line x1="0" y1={base} x2={chartWidth} y2={base} stroke="rgba(255,255,255,.08)" />
                   {[0.25, 0.5, 0.75, 1].map((t) => (
-                    <line
-                      key={t}
-                      x1="0"
-                      y1={base - (base - top) * t}
-                      x2={chartWidth}
-                      y2={base - (base - top) * t}
-                      stroke="rgba(255,255,255,.06)"
-                    />
+                    <line key={t} x1="0" y1={base - (base - top) * t} x2={chartWidth} y2={base - (base - top) * t} stroke="rgba(255,255,255,.06)" />
                   ))}
-
-                  {/* Barras */}
                   {interestedBars.map((d, i) => {
                     const x = left + i * (w + gap);
                     const h = ((d.interested || 0) / maxInterested) * (base - top);
                     const y = base - h;
-
                     return (
                       <g key={i}>
-                        {/* Barra principal */}
-                        <rect
-                          x={x}
-                          y={y}
-                          width={w}
-                          height={h}
-                          rx="6"
-                          ry="6"
-                          fill="rgba(26,160,179,.55)"
-                        >
-                          <title>
-                            {`${d.name}\nInteresados: ${d.interested ?? 0}${
-                              d.negotiating ? `\nEn negociación: ${d.negotiating}` : ""
-                            }`}
-                          </title>
+                        <rect x={x} y={y} width={w} height={h} rx="6" ry="6" fill="rgba(26,160,179,.55)">
+                          <title>{`${d.name}\nInteresados: ${d.interested ?? 0}${d.negotiating ? `\nEn negociación: ${d.negotiating}` : ""}`}</title>
                         </rect>
-
-                        {/* Punto indicando leads en negociación, si aplica */}
                         {d.negotiating ? (
-                          <circle
-                            cx={x + w / 2}
-                            cy={y - 6}
-                            r="3"
-                            fill="var(--brand)"
-                          >
+                          <circle cx={x + w / 2} cy={y - 6} r="3" fill="var(--brand)">
                             <title>{`En negociación: ${d.negotiating}`}</title>
                           </circle>
                         ) : null}
-
-                        {/* Etiqueta del eje X */}
-                        <text
-                          x={x + w / 2}
-                          y={H - 10}
-                          fontSize="9"
-                          textAnchor="middle"
-                          fill="var(--muted)"
-                        >
+                        <text x={x + w / 2} y={H - 10} fontSize="9" textAnchor="middle" fill="var(--muted)">
                           {d.name.length > 7 ? d.name.slice(0, 7) + "…" : d.name}
                         </text>
                       </g>
@@ -222,51 +210,64 @@ const PropertiesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Lista de propiedades */}
+        {/* Lista + paginación compacta */}
         <div className="mini-card results-card">
-          <div className="kpi-title" style={{ marginBottom: 8 }}>
-            Resultados
-          </div>
-          {properties.length === 0 ? (
+          <div className="kpi-title" style={{ marginBottom: 8 }}>Resultados</div>
+          {visible.length === 0 ? (
             <div className="empty">No hay propiedades en {city}.</div>
           ) : (
-            <div className="prop-list">
-              {properties.map((p) => (
-                <PropertyCard
-                  key={p.id}
-                  data={p}
-                  onClick={(id) =>
-                    alert(
-                      `Detalle propiedad #${id}\n${p.name}\n${p.address ?? ""}\nEstado: ${p.status ?? "-"}`
-                    )
-                  }
-                />
-              ))}
-            </div>
+            <>
+              <div className="prop-list">
+                {visible.map((p) => (
+                  <PropertyCard
+                    key={p.id}
+                    data={p}
+                    onClick={(id) =>
+                      alert(`Detalle propiedad #${id}\n${p.name}\n${p.address ?? ""}\nEstado: ${p.status ?? "-"}`)
+                    }
+                  />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+  <div className="pager compact">
+    <button
+      className="btn-ghost pager-btn"
+      disabled={pageClamped <= 1}
+      onClick={() => setPage((p) => Math.max(1, p - 1))}
+      aria-label="Anterior"
+    >
+      ‹
+    </button>
+
+    <div className="pager-pill">
+      {pageClamped}<span className="sep">/</span>{totalPages}
+    </div>
+
+    <button
+      className="btn-ghost pager-btn"
+      disabled={pageClamped >= totalPages}
+      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+      aria-label="Siguiente"
+    >
+      ›
+    </button>
+  </div>
+)}
+
+            </>
           )}
         </div>
 
-        {/* Donut de estado */}
+        {/* Donut */}
         <div className="kpi-card">
           <div className="kpi-title">Estado</div>
-          <div className="donut-wrap compact">
-            <svg viewBox="0 0 42 42" className="donut" style={{ width: 120, height: 120 }}>
-              {/* anillo base */}
-              <circle
-                className="donut-ring"
-                cx="21"
-                cy="21"
-                r="15.9155"
-                fill="transparent"
-                strokeWidth="6"
-              />
-              {/* segmentos */}
+          <div className="donut-wrap compact donut-row">
+            <svg viewBox="0 0 42 42" className="donut">
+              <circle className="donut-ring" cx="21" cy="21" r="15.9155" fill="transparent" strokeWidth="6" />
               {(() => {
                 type Seg = { val: number; className: string };
-                const totalSeg: number = Math.max(
-                  1,
-                  percent.interesado + percent.negociacion + percent.cerrado
-                );
+                const totalSeg: number = Math.max(1, percent.interesado + percent.negociacion + percent.cerrado);
                 const segs: Seg[] = [
                   { val: percent.interesado,  className: "donut-seg a" },
                   { val: percent.negociacion, className: "donut-seg b" },
@@ -294,34 +295,14 @@ const PropertiesPage: React.FC = () => {
                   );
                 });
               })()}
-              {/* centro con más aire */}
-              <g>
-                <text x="21" y="17" textAnchor="middle" fontSize="7.5" fill="var(--muted)">
-                  Total
-                </text>
-                <text
-                  x="21"
-                  y="31"
-                  textAnchor="middle"
-                  fontSize="12"
-                  fontWeight={800}
-                  fill="var(--ink)"
-                >
-                  {properties.length}
-                </text>
-              </g>
+              <text className="donut-center-title" x="21" y="17" textAnchor="middle">Total</text>
+              <text className="donut-center-number" x="21" y="31" textAnchor="middle">{properties.length}</text>
             </svg>
 
-            <div className="legend tight">
-              <div>
-                <i className="lg a" /> Interesado <b>{percent.interesado}%</b>
-              </div>
-              <div>
-                <i className="lg b" /> En negociación <b>{percent.negociacion}%</b>
-              </div>
-              <div>
-                <i className="lg c" /> Cerrado <b>{percent.cerrado}%</b>
-              </div>
+            <div className="legend tight legend-contrast">
+              <div><i className="lg a" /> Interesado <b>{percent.interesado}%</b></div>
+              <div><i className="lg b" /> En negociación <b>{percent.negociacion}%</b></div>
+              <div><i className="lg c" /> Cerrado <b>{percent.cerrado}%</b></div>
             </div>
           </div>
         </div>
