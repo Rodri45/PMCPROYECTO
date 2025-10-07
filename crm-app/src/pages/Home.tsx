@@ -278,13 +278,14 @@ export default function HomePage() {
       </section>
 
       {/* KPIs cortos */}
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 12,
-          marginTop: 12,
-        }}
+    <section
+      className="kpi-strip"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 12,
+        marginTop: 12,
+      }}
       >
         {/* Clientes */}
         <button
@@ -334,6 +335,7 @@ export default function HomePage() {
 
         {/* Utilidad YTD */}
         <button
+        
           className="card"
           onClick={() => nav("/reports")}
           style={{
@@ -360,7 +362,7 @@ export default function HomePage() {
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: "repeat(2, 2fr)",
           gap: 12,
           marginTop: 12,
         }}
@@ -368,7 +370,7 @@ export default function HomePage() {
         <button className="quick-item card" onClick={() => nav("/clients")}>
           <div className="badge">👤</div>
           <div style={{ flex: 1 }}>
-            <div className="card-title">Clientes</div>
+            <div className="card-title">Contactos</div>
             <div className="card-desc">Contacta, agenda y seguimiento</div>
           </div>
           <div className="card-desc">›</div>

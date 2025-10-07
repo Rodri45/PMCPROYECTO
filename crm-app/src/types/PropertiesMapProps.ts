@@ -18,6 +18,8 @@ export type MapConfig = {
 export type PropertiesMapProps = {
   properties: Property[];
   mapConfig: MapConfig;
+  onSelect?: (p: Property) => void; // ⬅️ nuevo
 };
+
 
 export {};

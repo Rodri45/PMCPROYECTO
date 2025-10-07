@@ -8,6 +8,7 @@ type Status = "Interesado" | "En negociación" | "Cerrado";
 type PropertyWithCounts = Property & {
   interested?: number;
   negotiating?: number;
+  photo?: string; // << NUEVO: foto opcional para popup del mapa
 };
 
 // ---------- base ----------
@@ -45,7 +46,6 @@ const rand = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
 function demoForCity(base: PropertyWithCounts[]): PropertyWithCounts[] {
-  // clona base y agrega 2–4 extras con coords cercanas
   const out: PropertyWithCounts[] = base.map(p => ({ ...p }));
   const extras = rand(2, 4);
   const names = ["Verdes Premium", "Lagos Plaza", "Lagos Norte", "Altos del Sol", "Parque Real"];
@@ -61,6 +61,7 @@ function demoForCity(base: PropertyWithCounts[]): PropertyWithCounts[] {
       status: (["Interesado","En negociación","Interesado","En negociación","Cerrado"] as Status[])[rand(0,4)],
       interested: rand(4, 15),
       negotiating: rand(0, 8),
+      photo: undefined,
     });
   }
   out.forEach(p => { if (p.status === "Cerrado") p.negotiating = 0; });
@@ -70,12 +71,12 @@ function demoForCity(base: PropertyWithCounts[]): PropertyWithCounts[] {
 const PropertiesPage: React.FC = () => {
   const [city, setCity] = useState<string>("Bogotá");
 
-  // almacenamos datos por ciudad para que Demo regenere todo
+  // datos por ciudad
   const [dataByCity, setDataByCity] = useState<Record<string, PropertyWithCounts[]>>(
     () => JSON.parse(JSON.stringify(BASE))
   );
 
-  // paginación fija (sin responsive)
+  // paginación fija
   const [page, setPage] = useState(1);
   const PER_PAGE = 8;
 
@@ -136,6 +137,55 @@ const PropertiesPage: React.FC = () => {
     setPage(1);
   };
 
+  /* ───────────────────────── Modal “Nueva propiedad” ───────────────────────── */
+  const [open, setOpen] = useState(false);
+  // foto demo real (apartamento)
+  const demoPhoto =
+    "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg?auto=compress&cs=tinysrgb&w=1600";
+
+  const [form, setForm] = useState<PropertyWithCounts>({
+    id: Date.now(),
+    name: "Loft Parque 93",
+    address: "Cra 13 #93-45",
+    status: "Interesado",
+    lat: center.latitude + (Math.random() - 0.5) * 0.01,
+    lng: center.longitude + (Math.random() - 0.5) * 0.01,
+    interested: 8,
+    negotiating: 2,
+    photo: demoPhoto,
+  } as PropertyWithCounts);
+
+  const resetForm = () =>
+    setForm({
+      id: Date.now(),
+      name: "Loft Parque 93",
+      address: "Cra 13 #93-45",
+      status: "Interesado",
+      lat: center.latitude + (Math.random() - 0.5) * 0.01,
+      lng: center.longitude + (Math.random() - 0.5) * 0.01,
+      interested: 8,
+      negotiating: 2,
+      photo: demoPhoto,
+    } as PropertyWithCounts);
+
+  const saveProperty = () => {
+    if (!form.name?.trim() || !form.address?.trim()) {
+      alert("Completa al menos Nombre y Dirección.");
+      return;
+    }
+    const newProp: PropertyWithCounts = {
+      ...form,
+      id: Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
+    };
+    setDataByCity((prev) => ({
+      ...prev,
+      [city]: [newProp, ...(prev[city] ?? [])],
+    }));
+    setOpen(false);
+    setPage(1);
+    resetForm();
+  };
+
   return (
     <div className="page">
       {/* Header */}
@@ -149,6 +199,9 @@ const PropertiesPage: React.FC = () => {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn-primary" onClick={() => { resetForm(); setOpen(true); }}>
+              + Nueva
+            </button>
             <button className="btn-ghost" onClick={runDemo}>Demo</button>
             <select
               className="city-select"
@@ -230,31 +283,30 @@ const PropertiesPage: React.FC = () => {
               </div>
 
               {totalPages > 1 && (
-  <div className="pager compact">
-    <button
-      className="btn-ghost pager-btn"
-      disabled={pageClamped <= 1}
-      onClick={() => setPage((p) => Math.max(1, p - 1))}
-      aria-label="Anterior"
-    >
-      ‹
-    </button>
+                <div className="pager compact">
+                  <button
+                    className="btn-ghost pager-btn"
+                    disabled={pageClamped <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-label="Anterior"
+                  >
+                    ‹
+                  </button>
 
-    <div className="pager-pill">
-      {pageClamped}<span className="sep">/</span>{totalPages}
-    </div>
+                  <div className="pager-pill">
+                    {pageClamped}<span className="sep">/</span>{totalPages}
+                  </div>
 
-    <button
-      className="btn-ghost pager-btn"
-      disabled={pageClamped >= totalPages}
-      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-      aria-label="Siguiente"
-    >
-      ›
-    </button>
-  </div>
-)}
-
+                  <button
+                    className="btn-ghost pager-btn"
+                    disabled={pageClamped >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    aria-label="Siguiente"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -307,6 +359,119 @@ const PropertiesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Nueva Propiedad */}
+      {open && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 520, maxWidth: "95vw" }}
+          >
+            <h3 style={{ marginTop: 0 }}>Nueva propiedad</h3>
+            <p className="card-desc" style={{ marginTop: -6 }}>
+              Completa los campos o usa los valores de ejemplo.
+            </p>
+
+            <div className="form-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <label style={{ gridColumn: "1 / -1" }}>
+                <span>Nombre*</span>
+                <input
+                  value={form.name ?? ""}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Ej. Loft Parque 93"
+                />
+              </label>
+
+              <label style={{ gridColumn: "1 / -1" }}>
+                <span>Dirección*</span>
+                <input
+                  value={form.address ?? ""}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Cra 13 #93-45"
+                />
+              </label>
+
+              <label>
+                <span>Latitud</span>
+                <input
+                  type="number"
+                  step="0.00001"
+                  value={form.lat}
+                  onChange={(e) => setForm({ ...form, lat: parseFloat(e.target.value) })}
+                />
+              </label>
+
+              <label>
+                <span>Longitud</span>
+                <input
+                  type="number"
+                  step="0.00001"
+                  value={form.lng}
+                  onChange={(e) => setForm({ ...form, lng: parseFloat(e.target.value) })}
+                />
+              </label>
+
+              <label>
+                <span>Estado</span>
+                <select
+                  value={form.status as Status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as Status })}
+                >
+                  <option>Interesado</option>
+                  <option>En negociación</option>
+                  <option>Cerrado</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Interesados</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.interested ?? 0}
+                  onChange={(e) => setForm({ ...form, interested: parseInt(e.target.value || "0", 10) })}
+                />
+              </label>
+
+              <label>
+                <span>En negociación</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.negotiating ?? 0}
+                  onChange={(e) => setForm({ ...form, negotiating: parseInt(e.target.value || "0", 10) })}
+                />
+              </label>
+
+              <label style={{ gridColumn: "1 / -1" }}>
+                <span>Foto (URL)</span>
+                <input
+                  value={form.photo ?? ""}
+                  onChange={(e) => setForm({ ...form, photo: e.target.value })}
+                  placeholder="https://…"
+                />
+              </label>
+
+              {form.photo ? (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <img
+                    src={form.photo}
+                    alt="preview"
+                    style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 12 }}
+                    onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+              <button className="btn-ghost" onClick={() => setOpen(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={saveProperty}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
