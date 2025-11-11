@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import ClientsList from "../components/Clients/ClientsList";
 import type { Client, ClientStatus } from "../types/ClientsListProps";
 
-/* ─────────────────────────── Setup ─────────────────────────── */
+/* ───────────────── Setup ───────────────── */
 type NewClient = {
   name: string;
   email?: string;
@@ -24,27 +24,32 @@ const DEFAULT_MOCKS: Client[] = [
 /* Backdrop simple para modal */
 const Backdrop: React.FC<{ onClose: () => void; children: React.ReactNode }> = ({ onClose, children }) => (
   <div className="modal-backdrop" onClick={onClose}>
-    <div className="modal" onClick={(e) => e.stopPropagation()}>{children}</div>
+    <div className="modal" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </div>
   </div>
 );
 
-/* ─────────────────────────── Page ─────────────────────────── */
 const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ClientStatus | "Todos">("Todos");
 
-  // Modal
+  // modal
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<NewClient>({
-    name: "", email: "", phone: "", avatarUrl: "", status: "Interesado",
+    name: "",
+    email: "",
+    phone: "",
+    avatarUrl: "",
+    status: "Interesado",
   });
 
-  // Paginación
+  // paginación
   const PAGE_SIZE = 8;
   const [page, setPage] = useState(1);
 
-  /* Carga inicial (si no hay nada, usa mocks) */
+  // cargar
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -54,20 +59,19 @@ const ClientsPage: React.FC = () => {
           setClients(parsed);
           return;
         }
-      } catch { /* si falla, ignora y usa mocks */ }
+      } catch {}
     }
     setClients(DEFAULT_MOCKS);
   }, []);
 
-  /* Persistir */
+  // persistir
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
   }, [clients]);
 
-  /* Filtro + búsqueda */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const out = clients.filter((c) => {
+    return clients.filter((c) => {
       const matchQ =
         !q ||
         c.name.toLowerCase().includes(q) ||
@@ -76,16 +80,16 @@ const ClientsPage: React.FC = () => {
       const matchF = filter === "Todos" ? true : c.status === filter;
       return matchQ && matchF;
     });
-    return out;
   }, [clients, query, filter]);
 
-  /* Paginado */
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  /* Acciones */
   const addClient = () => {
-    if (!form.name.trim()) return alert("El nombre es obligatorio");
+    if (!form.name.trim()) {
+      alert("El nombre es obligatorio");
+      return;
+    }
     const newC: Client = {
       id: genId(),
       name: form.name.trim(),
@@ -114,45 +118,17 @@ const ClientsPage: React.FC = () => {
     alert(`Ficha del cliente:\n\n${c.name}\n${c.email || "-"}\n${c.phone || "-"}\nEstado: ${c.status}`);
   };
 
-  /* DEMO: genera 20–30 clientes aleatorios */
   const seedDemo = () => {
-    const first = ["Juan", "Laura", "Pedro", "Sofía", "Andrés", "María", "Camilo", "Daniela", "Felipe", "Carolina", "Pablo", "Diana", "Julián", "Paula", "Santiago", "Valentina", "Nicolás", "Luisa", "Esteban", "Catalina"];
-    const last  = ["Pérez", "García", "Martínez", "Ramírez", "Sánchez", "Gómez", "Rodríguez", "Fernández", "Castro", "Vargas", "Suárez", "López", "Mejía", "Muñoz", "Rojas", "Moreno"];
-    const statuses: ClientStatus[] = ["Interesado", "En negociación", "Cerrado"];
-
-    const howMany = 20 + Math.floor(Math.random() * 11); // 20..30
-    const genPhone = () => "57" + (300 + Math.floor(Math.random() * 80)).toString() + Math.floor(1000000 + Math.random() * 8999999).toString();
-    const todayLabel = ["hoy", "ayer", "hace 2 días", "hace 3 días", "hace 1 h", "hace 2 h"];
-
-    const arr: Client[] = Array.from({ length: howMany }).map((_, i) => {
-      const fn = first[Math.floor(Math.random() * first.length)];
-      const ln = last[Math.floor(Math.random() * last.length)];
-      const name = `${fn} ${ln}`;
-      const email = `${fn.toLowerCase()}.${ln.toLowerCase()}@demo.io`.replace("ñ","n");
-      const avatarIdx = 1 + ((i * 7) % 70); // distribuye un poco
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      return {
-        id: genId(),
-        name,
-        email,
-        phone: genPhone(),
-        avatarUrl: `https://i.pravatar.cc/100?img=${avatarIdx}`,
-        status,
-        lastActivity: todayLabel[Math.floor(Math.random() * todayLabel.length)],
-      };
-    });
-
-    setClients(arr);
-    setQuery("");
-    setFilter("Todos");
-    setPage(1);
+    // ... (puedes dejar aquí tu generador de demo tal cual)
   };
 
-  /* Chips (filtro) */
   const Chip: React.FC<{ value: ClientStatus | "Todos"; label: string }> = ({ value, label }) => (
     <button
       className={"chip" + (filter === value ? " chip--active" : "")}
-      onClick={() => { setFilter(value); setPage(1); }}
+      onClick={() => {
+        setFilter(value);
+        setPage(1);
+      }}
     >
       {label}
     </button>
@@ -172,7 +148,10 @@ const ClientsPage: React.FC = () => {
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn-ghost" onClick={seedDemo}>Demo</button>
-            <button className="btn-primary" onClick={() => setOpen(true)}>+ Nuevo</button>
+            {/* aquí abres el modal */}
+            <button className="btn-primary" onClick={() => setOpen(true)}>
+              + Nuevo
+            </button>
           </div>
         </div>
       </div>
@@ -183,7 +162,10 @@ const ClientsPage: React.FC = () => {
           className="search"
           placeholder="Buscar por nombre, email o teléfono…"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
         />
         <div className="chips">
           <Chip value="Todos" label="Todos" />
@@ -196,43 +178,12 @@ const ClientsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Lista (paginada) */}
+      {/* Lista */}
       <ClientsList clients={paged} onClientSelect={handleSelect} />
 
-      {/* Paginación */}
-      {filtered.length > PAGE_SIZE && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            justifyContent: "center",
-            margin: "10px 0 18px",
-          }}
-        >
-          <button
-            className="btn-ghost"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            title="Anterior"
-          >
-            ‹
-          </button>
-          <div className="chip" style={{ cursor: "default" }}>
-            {page}/{pageCount}
-          </div>
-          <button
-            className="btn-ghost"
-            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-            disabled={page === pageCount}
-            title="Siguiente"
-          >
-            ›
-          </button>
-        </div>
-      )}
+      {/* paginación ... */}
 
-      {/* Modal nuevo cliente */}
+      {/* Modal */}
       {open && (
         <Backdrop onClose={() => setOpen(false)}>
           <h3 style={{ margin: 0 }}>Nuevo cliente</h3>
@@ -275,9 +226,7 @@ const ClientsPage: React.FC = () => {
               <span>Estado</span>
               <select
                 value={form.status}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, status: e.target.value as ClientStatus }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ClientStatus }))}
               >
                 <option>Interesado</option>
                 <option>En negociación</option>
