@@ -179,6 +179,20 @@ export default function HomePage() {
   useEffect(() => {
     refreshFromStorage();
   }, []);
+useEffect(() => {
+  const onUpdated = () => refreshFromStorage();
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === KEY_CAL || e.key === KEY_CLIENTS || e.key === KEY_MOVES) {
+      refreshFromStorage();
+    }
+  };
+  document.addEventListener("pmc:events-updated", onUpdated);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    document.removeEventListener("pmc:events-updated", onUpdated);
+    window.removeEventListener("storage", onStorage);
+  };
+}, []);
 
   // % del anillo
   const ringPct = useMemo(
@@ -414,50 +428,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Equipooo */}
-      <section className="card" style={{ marginTop: 12 }}>
-        <div className="kpi-title">ROLES Y APORTACIONES</div>
-        <div style={{ display: "grid", gap: 6 }}>
-          <div>
-            <span style={{ color: "var(--muted)" }}>DESARROLLADORES: </span>
-            <b>RODRIGO GARCIA</b>, <b>ANDRES ROMERO</b> y <b>JUAN DAVID ORTIZ</b>
-          </div>
-          <div>
-            <span style={{ color: "var(--muted)" }}>INVESTIGADOR DE DATOS: </span>
-            <b>JUAN JOSE PENHA</b> y <b>ALBERTO PERTUZ</b>
-          </div>
-        </div>
-      </section>
-      {/* Equipo */}
-      <section className="card" style={{ marginTop: 12 }}>
-  <div className="kpi-title">Competencia</div>
-  <div className="list">
-    <div className="list-item">
-      <div className="list-left">
-        <div>
-          <div className="kpi-title">WASI</div>
-          <div className="list-desc">
-            CRM inmobiliario con portal de propiedades y publicación en portales.
-            Automatiza inventario, web inmobiliaria y captación de leads.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="list-item">
-      <div className="list-left">
-        <div>
-          <div className="kpi-title">Clientify</div>
-          <div className="list-desc">
-            CRM + automatización de marketing/inbound. Embudos, email/WhatsApp,
-            landing pages y seguimiento comercial multicanal.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
+      
     </div>
   );
 }
