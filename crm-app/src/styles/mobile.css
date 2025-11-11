@@ -1240,3 +1240,28 @@ body{
 .input-row{ display:flex; gap:8px; }
 .input-row input{ flex:1; background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 12px; outline:none; }
 .input-row .send{ border:none; background:var(--brand); color:#062026; border-radius:10px; padding:10px 14px; font-weight:700; }
+
+
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  color:var(--ink);
+
+  /* Imagen + velo para legibilidad */
+  background:
+    linear-gradient(180deg, rgba(7,14,24,.85), rgba(7,14,24,.60)),      /* velo oscuro */
+    url("https://www.shutterstock.com/image-illustration/city-buildings-abstract-background-smart-260nw-2605167071.jpg");
+
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* parallax sutil en desktop */
+}
+
+/* Para móviles, evita 'fixed' (mejor performance) */
+@media (max-width: 768px){
+  body{
+    background-attachment: scroll;
+    background-position: center top;
+  }
+}

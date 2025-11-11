@@ -268,16 +268,16 @@ async function answerFront(message: string): Promise<string> {
   // 4) Propiedades (conteo)
   if (/propiedad(es)?|inmueble(s)?/.test(lower) && /cuant|total|cuantos/.test(lower)) {
     const { total } = propertiesSummary();
-    return `🏠 Tienes **${total}** propiedades registradas.`;
+    return ` Tienes **${total}** propiedades registradas.`;
   }
 
   // 5) Clientes por estado (cerrado / interesado / en negociación)
   if (/clientes?|cerrad|interesad|negociaci/.test(lower)) {
     const by = clientsByStatus();
     const sec = [
-      by["En negociación"].length ? `🤝 En negociación:\n${by["En negociación"].map(n=>"• "+n).join("\n")}` : "",
-      by["Interesado"].length ? `⭐ Interesados:\n${by["Interesado"].map(n=>"• "+n).join("\n")}` : "",
-      by["Cerrado"].length ? `✅ Cerrados:\n${by["Cerrado"].map(n=>"• "+n).join("\n")}` : "",
+      by["En negociación"].length ? ` En negociación:\n${by["En negociación"].map(n=>"• "+n).join("\n")}` : "",
+      by["Interesado"].length ? ` Interesados:\n${by["Interesado"].map(n=>"• "+n).join("\n")}` : "",
+      by["Cerrado"].length ? ` Cerrados:\n${by["Cerrado"].map(n=>"• "+n).join("\n")}` : "",
     ].filter(Boolean).join("\n\n");
     return sec || "No encontré clientes con estado registrado.";
   }
@@ -287,22 +287,22 @@ async function answerFront(message: string): Promise<string> {
     const zone = Object.keys(MARKET).find((z) => new RegExp(z, "i").test(message));
     if (zone) {
       const { usd_m2, note } = MARKET[zone];
-      return `📈 En **${zone}** el valor de referencia está cerca de **USD ${usd_m2.toLocaleString()}/m²** ${note ? `(${note})` : ""}. Si tienes el área te estimo un rango.`;
+      return ` En ${zone} el valor de referencia está cerca de USD ${usd_m2.toLocaleString()}/m² ${note ? `(${note})` : ""}. Si tienes el área te estimo un rango.`;
     }
-    return "📈 Dime, por ejemplo: *precio m² en Cedritos* o *valor en Rosales*.";
+    return " Dime, por ejemplo: *precio m² en Cedritos* o *valor en Rosales*.";
   }
 
   // 7) Recomendaciones
   if (/recom|suger|busco|ofertas|disponibles/.test(lower)) {
     const recs = recommend(message);
-    if (!recs.length) return "🔍 No encontré coincidencias. Dame ciudad, número de **habitaciones** y presupuesto.";
+    if (!recs.length) return " No encontré coincidencias. Dame ciudad, número de **habitaciones** y presupuesto.";
     const lines = recs.map((r) => `• **${r.name}** — ${r.city} / ${r.zone} — ${r.rooms}H — ${r.area}m² — ${COP(r.price)}`);
-    return `🏠 Te pueden interesar:\n${lines.join("\n")}\n¿Quieres que las guarde para enviar a un cliente?`;
+    return ` Te pueden interesar:\n${lines.join("\n")}\n¿Quieres que las guarde para enviar a un cliente?`;
   }
 
   // 8) Ayuda
   return (
-    "Hola 👋 Puedo **crear recordatorios**, **consultar tu agenda**, **mostrar ingresos/gastos**, " +
+    "Hola  Puedo **crear recordatorios**, **consultar tu agenda**, **mostrar ingresos/gastos**, " +
     "**contar propiedades**, listar **clientes por estado**, dar **precios de mercado** y **recomendar inmuebles**.\n" +
     "- *Recuérdame llamada al Banco el 15/11 09:30*\n" +
     "- *¿Tengo eventos hoy?* / *Eventos 14 de noviembre*\n" +
@@ -322,7 +322,7 @@ const AssistantWidget: React.FC = () => {
     const saved = readLS<Msg[]>(KEY_CHAT, []);
     return saved.length
       ? saved
-      : [{ id: randomId(), role: "assistant", text: "¡Hola! Soy tu asistente IA. ¿Qué hacemos hoy? 😊", ts: Date.now() }];
+      : [{ id: randomId(), role: "assistant", text: "¡Hola! Soy tu asistente IA. ¿Qué hacemos hoy? ", ts: Date.now() }];
   });
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -377,9 +377,9 @@ const AssistantWidget: React.FC = () => {
                 setMsgs([{ id: randomId(), role: "assistant", text: "Conversación reiniciada. ¿Qué hacemos ahora? 🙂", ts: Date.now() }]);
               }}
             >
-              🧹 Reset
+               Reset
             </button>
-            <button className="x" onClick={() => setOpen(false)}>✕</button>
+            <button className="botonreset" onClick={() => setOpen(false)}>✕</button>
           </div>
         </div>
 
