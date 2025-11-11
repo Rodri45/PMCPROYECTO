@@ -10,7 +10,6 @@ import Shell from "./layouts/Shell";
 import LoginPage from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import TabBar from "./components/TabBar";
 import "./styles/mobile.css";
 
 const App: React.FC = () => {
@@ -24,6 +23,7 @@ const App: React.FC = () => {
         <Route
           element={
             <ProtectedRoute>
+              {/* Shell contiene la TopBar/TabBar y el AssistantWidget global */}
               <Shell />
             </ProtectedRoute>
           }
@@ -35,10 +35,9 @@ const App: React.FC = () => {
           <Route path="/calendar" element={<CalendarPage />} />
         </Route>
 
+        {/* 404 */}
         <Route path="*" element={<div className="page">404 - No encontrada</div>} />
       </Routes>
-      {/* La TabBar solo se ve cuando hay sesión, si prefieres ocúltala en /login dentro de TabBar */}
-      <TabBar />
     </BrowserRouter>
   );
 };

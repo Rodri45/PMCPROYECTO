@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toISO as toISOStorage, getEvents, eventsByDate } from "../lib/storage";
 
 /* ─── Storage keys compartidos con otras páginas ─── */
 const KEY_CLIENTS = "pmc_clients";
@@ -98,27 +99,12 @@ function seedCalendarDemo() {
 }
 
 function seedReportsDemo(year: number) {
-  // Serie "realista" 12 meses
-  const catsI = ["Rentas", "Comisiones", "Servicios"];
-  const catsE = ["Publicidad", "Impuestos", "Viajes", "Honorarios"];
   const out: Move[] = [];
   for (let m = 0; m < 12; m++) {
-    const inc =
-      18000 + Math.round(Math.random() * 9000) + Math.round(Math.random() * 15000);
+    const inc = 18000 + Math.round(Math.random() * 9000) + Math.round(Math.random() * 15000);
     const exp = 3500 + Math.round(Math.random() * 4000);
-
-    out.push({
-      id: randomId("m"),
-      kind: "income",
-      amount: inc,
-      date: `${year}-${pad(m + 1)}-15`,
-    });
-    out.push({
-      id: randomId("m"),
-      kind: "expense",
-      amount: exp,
-      date: `${year}-${pad(m + 1)}-08`,
-    });
+    out.push({ id: randomId("m"), kind: "income", amount: inc, date: `${year}-${pad(m + 1)}-15` });
+    out.push({ id: randomId("m"), kind: "expense", amount: exp, date: `${year}-${pad(m + 1)}-08` });
   }
   localStorage.setItem(KEY_MOVES, JSON.stringify(out));
   return out;
@@ -144,6 +130,18 @@ export default function HomePage() {
     } catch {
       setClientsCount(0);
     }
+    try {
+    const evts = getEvents();
+    const fromISO = toISO(now);
+    const next7 = evts.filter(e => e.date >= fromISO && e.date <= toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate()+7)));
+    setUpcomingCount(next7.length);
+
+    const today = eventsByDate(fromISO).slice(0,4);
+    setTodayEvents(today as any); // tu tipo local CalEvent es compatible
+  } catch {
+    setUpcomingCount(0);
+    setTodayEvents([]);
+}
 
     // Calendario: próximos 7 y hoy
     try {
@@ -170,12 +168,8 @@ export default function HomePage() {
       const yMoves = (Array.isArray(moves) ? moves : []).filter(
         (m) => new Date(m.date).getFullYear() === year
       );
-      const income = yMoves
-        .filter((m) => m.kind === "income")
-        .reduce((a, b) => a + b.amount, 0);
-      const expense = yMoves
-        .filter((m) => m.kind === "expense")
-        .reduce((a, b) => a + b.amount, 0);
+      const income = yMoves.filter((m) => m.kind === "income").reduce((a, b) => a + b.amount, 0);
+      const expense = yMoves.filter((m) => m.kind === "expense").reduce((a, b) => a + b.amount, 0);
       setYtdProfit(income - expense);
     } catch {
       setYtdProfit(0);
@@ -278,14 +272,14 @@ export default function HomePage() {
       </section>
 
       {/* KPIs cortos */}
-    <section
-      className="kpi-strip"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 12,
-        marginTop: 12,
-      }}
+      <section
+        className="kpi-strip"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 12,
+          marginTop: 12,
+        }}
       >
         {/* Clientes */}
         <button
@@ -335,7 +329,6 @@ export default function HomePage() {
 
         {/* Utilidad YTD */}
         <button
-        
           className="card"
           onClick={() => nav("/reports")}
           style={{
@@ -420,6 +413,51 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Equipooo */}
+      <section className="card" style={{ marginTop: 12 }}>
+        <div className="kpi-title">ROLES Y APORTACIONES</div>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div>
+            <span style={{ color: "var(--muted)" }}>DESARROLLADORES: </span>
+            <b>RODRIGO GARCIA</b>, <b>ANDRES ROMERO</b> y <b>JUAN DAVID ORTIZ</b>
+          </div>
+          <div>
+            <span style={{ color: "var(--muted)" }}>INVESTIGADOR DE DATOS: </span>
+            <b>JUAN JOSE PENHA</b> y <b>ALBERTO PERTUZ</b>
+          </div>
+        </div>
+      </section>
+      {/* Equipo */}
+      <section className="card" style={{ marginTop: 12 }}>
+  <div className="kpi-title">Competencia</div>
+  <div className="list">
+    <div className="list-item">
+      <div className="list-left">
+        <div>
+          <div className="kpi-title">WASI</div>
+          <div className="list-desc">
+            CRM inmobiliario con portal de propiedades y publicación en portales.
+            Automatiza inventario, web inmobiliaria y captación de leads.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="list-item">
+      <div className="list-left">
+        <div>
+          <div className="kpi-title">Clientify</div>
+          <div className="list-desc">
+            CRM + automatización de marketing/inbound. Embudos, email/WhatsApp,
+            landing pages y seguimiento comercial multicanal.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
     </div>
   );
 }

@@ -2,6 +2,8 @@
 import React from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { logout, getUser } from "../lib/auth";
+import AssistantWidget from "../pages/AssistantWidget"; // <-- IA global
+import TabBar from "../components/TabBar";                   // <-- TabBar global
 
 const Shell: React.FC = () => {
   const nav = useNavigate();
@@ -25,6 +27,7 @@ const Shell: React.FC = () => {
 
   return (
     <>
+      {/* Topbar */}
       <header className="topbar">
         <div className="row">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -54,12 +57,24 @@ const Shell: React.FC = () => {
                 {user.name} · {user.role}
               </span>
             ) : null}
-            <button className="btn-ghost" onClick={handleLogout}>Salir</button>
+            <button className="btn-ghost" onClick={handleLogout}>
+              Salir
+            </button>
           </div>
         </div>
       </header>
 
-      <Outlet />
+      {/* Contenido principal */}
+      <main style={{ paddingBottom: 74 }}>
+        {/* paddingBottom para no tapar contenido con la TabBar fija */}
+        <Outlet />
+      </main>
+
+      {/* TabBar fija abajo (visible en todas las vistas protegidas) */}
+      <TabBar />
+
+      {/* Widget de IA flotante (icono 🤖 visible en todas las vistas protegidas) */}
+      <AssistantWidget />
     </>
   );
 };
