@@ -180,7 +180,7 @@ useEffect(() => {
   const removeEvent = (id: string) => { if (!confirm("¿Eliminar este evento?")) return; setEvents((prev) => prev.filter((e) => e.id !== id)); };
 
   const labelForTab = (t: EventType | "Todos") => t === "Todos" ? "Todos" : t === "Visita" ? "Visitas" : t === "Reunión" ? "Reuniones" : t === "Llamada" ? "Llamadas" : "Tareas";
-  const iconFor = (t: EventType) => t === "Visita" ? "🏠" : t === "Reunión" ? "🤝" : t === "Llamada" ? "📞" : "✅";
+  const iconFor = (t: EventType) => t === "Visita" ? "" : t === "Reunión" ? "" : t === "Llamada" ? "" : "";
   const formatLong = (iso?: string, time?: string) => {
     if (!iso) return "";
     const d = new Date(iso + "T00:00:00");
@@ -239,29 +239,6 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="mini-card" style={{ marginTop: 14 }}>
-        <div className="kpi-title">Próximos 7 días — {labelForTab(tab)}</div>
-        {nextVisible.length === 0 ? <div className="empty">No hay eventos próximos.</div> : (
-          <>
-            <div className="list">
-              {nextVisible.map((e) => (
-                <div key={e.id} className="list-item">
-                  <div className="list-left">
-                    <div className="badge">{iconFor(e.type)}</div>
-                    <div>
-                      <div className="list-title">{e.title}</div>
-                      <div className="list-desc">{formatLong(e.date, e.time)} · {e.place || e.type}</div>
-                    </div>
-                  </div>
-                  <div className="list-right"><button className="btn-ghost" onClick={() => removeEvent(e.id)}>Eliminar</button></div>
-                </div>
-              ))}
-            </div>
-            <Pager page={nextPage} total={nextTotalPages} onPage={setNextPage} />
-          </>
-        )}
-      </div>
-
       <div className="mini-card" style={{ marginTop: 12 }}>
         <div className="kpi-title">{formatLong(selected)} — {labelForTab(tab)}</div>
         {dayVisible.length === 0 ? <div className="empty">Sin eventos para este día.</div> : (
@@ -282,6 +259,29 @@ useEffect(() => {
               ))}
             </div>
             <Pager page={dayPage} total={dayTotalPages} onPage={setDayPage} />
+          </>
+        )}
+      </div>
+
+      <div className="mini-card" style={{ marginTop: 14 }}>
+        <div className="kpi-title">Próximos 7 días — {labelForTab(tab)}</div>
+        {nextVisible.length === 0 ? <div className="empty">No hay eventos próximos.</div> : (
+          <>
+            <div className="list">
+              {nextVisible.map((e) => (
+                <div key={e.id} className="list-item">
+                  <div className="list-left">
+                    <div className="badge">{iconFor(e.type)}</div>
+                    <div>
+                      <div className="list-title">{e.title}</div>
+                      <div className="list-desc">{formatLong(e.date, e.time)} · {e.place || e.type}</div>
+                    </div>
+                  </div>
+                  <div className="list-right"><button className="btn-ghost" onClick={() => removeEvent(e.id)}>Eliminar</button></div>
+                </div>
+              ))}
+            </div>
+            <Pager page={nextPage} total={nextTotalPages} onPage={setNextPage} />
           </>
         )}
       </div>

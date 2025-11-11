@@ -8,6 +8,8 @@
   --bg-2:#EAEFF5;         /* halo */
   --card:#FFFFFF;         /* tarjeta */
   --card-soft:#FAFBFF;    /* variante suave para listas */
+  --brand:#0F766E;   /* verde petróleo */
+  --brand-2:#115E59;
   --ring:rgba(14,78,90,.12);
   --shadow:0 10px 30px rgba(13,35,51,.10);
   --radius:18px;

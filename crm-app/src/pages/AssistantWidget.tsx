@@ -399,7 +399,7 @@ const AssistantWidget: React.FC = () => {
               "Ingresos y gastos totales",
               "Clientes en negociación",
               "Precio m² en Cedritos",
-              "Recomiéndame aptos en Bogotá 2 habitaciones 320M",
+              "Recomiéndame aptos en Bogotá 1 habitación 320M",
             ].map((q) => (
               <button key={q} className="chip" onClick={() => setInput(q)}>
                 {q}
