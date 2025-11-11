@@ -353,7 +353,7 @@ useEffect(() => {
             padding: "12px 14px",
           }}
         >
-          <div className="badge">✅</div>
+          <div className="badge">📊</div>
           <div>
             <div style={{ fontWeight: 700 }}>Utilidad YTD</div>
             <div className="card-desc">año actual</div>
